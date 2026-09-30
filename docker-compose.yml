@@ -1,0 +1,16 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: servc-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: servc
+    ports:
+      - "5432:5432"
+    volumes:
+      - servc_pgdata:/var/lib/postgresql/data
+
+volumes:
+  servc_pgdata:

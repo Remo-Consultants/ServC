@@ -1,0 +1,662 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  // Local demo uses SQLite. For production, switch provider to "postgresql"
+  // and set DATABASE_URL to your Postgres connection string.
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// ─────────────────────────────────────────────
+// Multi-tenancy & Organization
+// ─────────────────────────────────────────────
+
+model Company {
+  id              String   @id @default(cuid())
+  name            String
+  legalName       String?
+  gstin           String?  @unique
+  pan             String?
+  email           String?
+  phone           String?
+  addressLine1    String?
+  addressLine2    String?
+  city            String?
+  state           String?
+  stateCode       String?  // GST state code e.g. "27" for MH
+  pincode         String?
+  logoUrl         String?
+  invoicePrefix   String   @default("INV")
+  jobCardPrefix   String   @default("JC")
+  estimatePrefix  String   @default("EST")
+  timezone        String   @default("Asia/Kolkata")
+  currency        String   @default("INR")
+  isActive        Boolean  @default(true)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  branches        Branch[]
+  users           User[]
+  customers       Customer[]
+  vehicles        Vehicle[]
+  parts           Part[]
+  suppliers       Supplier[]
+  laborServices   LaborService[]
+  bookings        Booking[]
+  repairOrders    RepairOrder[]
+  estimates       Estimate[]
+  invoices        Invoice[]
+  payments        Payment[]
+  bays            Bay[]
+  auditLogs       AuditLog[]
+  purchaseOrders  PurchaseOrder[]
+  settings        CompanySetting[]
+}
+
+model CompanySetting {
+  id        String   @id @default(cuid())
+  companyId String
+  key       String
+  value     String
+  company   Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@unique([companyId, key])
+}
+
+model Branch {
+  id           String   @id @default(cuid())
+  companyId    String
+  name         String
+  code         String
+  phone        String?
+  email        String?
+  addressLine1 String?
+  addressLine2 String?
+  city         String?
+  state        String?
+  stateCode    String?
+  pincode      String?
+  gstin        String?  // branch-level GSTIN if different
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  company      Company       @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  users        User[]
+  bays         Bay[]
+  bookings     Booking[]
+  repairOrders RepairOrder[]
+  stockItems   StockItem[]
+  invoices     Invoice[]
+
+  @@unique([companyId, code])
+}
+
+model Bay {
+  id        String  @id @default(cuid())
+  companyId String
+  branchId  String
+  name      String
+  bayType   String  @default("GENERAL") // GENERAL, QUICK_SERVICE, BODY_SHOP, DETAILING
+  isActive  Boolean @default(true)
+
+  company      Company       @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  branch       Branch        @relation(fields: [branchId], references: [id], onDelete: Cascade)
+  repairOrders RepairOrder[]
+}
+
+// ─────────────────────────────────────────────
+// Auth & RBAC
+// ─────────────────────────────────────────────
+
+
+model User {
+  id            String    @id @default(cuid())
+  companyId     String?
+  branchId      String?
+  role          String
+  name          String
+  email         String?   @unique
+  phone         String    @unique
+  passwordHash  String?
+  preferredLang String    @default("en") // en, hi, ta, mr, te, kn
+  isActive      Boolean   @default(true)
+  lastLoginAt   DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  company            Company?      @relation(fields: [companyId], references: [id])
+  branch             Branch?       @relation(fields: [branchId], references: [id])
+  customer           Customer?
+  assignedOrders     RepairOrder[] @relation("TechnicianOrders")
+  createdOrders      RepairOrder[] @relation("AdvisorOrders")
+  inspections        Inspection[]
+  otpTokens          OtpToken[]
+  auditLogs          AuditLog[]
+}
+
+model OtpToken {
+  id        String   @id @default(cuid())
+  userId    String?
+  phone     String
+  code      String
+  purpose   String   @default("LOGIN") // LOGIN, APPROVAL
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime @default(now())
+
+  user User? @relation(fields: [userId], references: [id])
+
+  @@index([phone, code])
+}
+
+model AuditLog {
+  id         String   @id @default(cuid())
+  companyId  String?
+  userId     String?
+  action     String
+  entityType String
+  entityId   String?
+  metadata   String?
+  ipAddress  String?
+  createdAt  DateTime @default(now())
+
+  company Company? @relation(fields: [companyId], references: [id])
+  user    User?    @relation(fields: [userId], references: [id])
+
+  @@index([companyId, createdAt])
+}
+
+// ─────────────────────────────────────────────
+// Customers & Vehicles
+// ─────────────────────────────────────────────
+
+model Customer {
+  id              String   @id @default(cuid())
+  companyId       String
+  userId          String?  @unique
+  name            String
+  phone           String
+  email           String?
+  gstin           String?
+  addressLine1    String?
+  addressLine2    String?
+  city            String?
+  state           String?
+  stateCode       String?
+  pincode         String?
+  preferredLang   String   @default("en")
+  whatsappOptIn   Boolean  @default(true)
+  smsOptIn        Boolean  @default(true)
+  emailOptIn      Boolean  @default(false)
+  source          String?  // WALK_IN, ONLINE, REFERRAL, ADVERTISEMENT
+  notes           String?
+  lifetimeValue   Decimal  @default(0)
+  npsScore        Int?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  company      Company       @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  user         User?         @relation(fields: [userId], references: [id])
+  vehicles     Vehicle[]
+  bookings     Booking[]
+  repairOrders RepairOrder[]
+  estimates    Estimate[]
+  invoices     Invoice[]
+  payments     Payment[]
+
+  @@unique([companyId, phone])
+  @@index([companyId, name])
+}
+
+
+model Vehicle {
+  id               String    @id @default(cuid())
+  companyId        String
+  customerId       String
+  registrationNo   String
+  brand            String
+  model            String
+  variant          String?
+  year             Int?
+  color            String?
+  vin              String?
+  engineNo         String?
+  fuelType         String @default("PETROL")
+  transmission     String?   // MANUAL, AUTOMATIC
+  currentMileage   Int       @default(0)
+  insuranceExpiry  DateTime?
+  pucExpiry        DateTime?
+  chassisNo        String?
+  vahanSyncedAt    DateTime?
+  notes            String?
+  isActive         Boolean   @default(true)
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  company      Company            @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  customer     Customer           @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  bookings     Booking[]
+  repairOrders RepairOrder[]
+  activities   VehicleActivity[]
+
+  @@unique([companyId, registrationNo])
+  @@index([registrationNo])
+}
+
+model VehicleActivity {
+  id          String   @id @default(cuid())
+  vehicleId   String
+  type        String
+  title       String
+  description String?
+  entityType  String?
+  entityId    String?
+  metadata    String?
+  createdAt   DateTime @default(now())
+
+  vehicle Vehicle @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
+
+  @@index([vehicleId, createdAt])
+}
+
+// ─────────────────────────────────────────────
+// Bookings & Scheduling
+// ─────────────────────────────────────────────
+
+
+
+model Booking {
+  id              String        @id @default(cuid())
+  companyId       String
+  branchId        String
+  customerId      String
+  vehicleId       String
+  bookingNumber   String
+  status          String @default("REQUESTED")
+  source          String @default("ONLINE")
+  scheduledAt     DateTime
+  estimatedDuration Int         @default(60) // minutes
+  serviceType     String        // PERIODIC, REPAIR, BODY, DETAILING, ACCIDENT
+  description     String?
+  reminderSentAt  DateTime?
+  checkedInAt     DateTime?
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  company     Company      @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  branch      Branch       @relation(fields: [branchId], references: [id])
+  customer    Customer     @relation(fields: [customerId], references: [id])
+  vehicle     Vehicle      @relation(fields: [vehicleId], references: [id])
+  repairOrder RepairOrder?
+
+  @@unique([companyId, bookingNumber])
+  @@index([branchId, scheduledAt])
+}
+
+// ─────────────────────────────────────────────
+// Repair Orders (Job Cards), Inspections, Estimates
+// ─────────────────────────────────────────────
+
+
+model RepairOrder {
+  id              String            @id @default(cuid())
+  companyId       String
+  branchId        String
+  customerId      String
+  vehicleId       String
+  bookingId       String?           @unique
+  bayId           String?
+  advisorId       String?
+  technicianId    String?
+  jobCardNumber   String
+  status          String @default("REQUESTED")
+  complaint       String?
+  odometerIn      Int?
+  odometerOut     Int?
+  fuelLevelIn     Int?              // 0-100
+  fuelLevelOut    Int?
+  customerNotes   String?
+  internalNotes   String?
+  promisedAt      DateTime?
+  startedAt       DateTime?
+  completedAt     DateTime?
+  deliveredAt     DateTime?
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+
+  company     Company      @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  branch      Branch       @relation(fields: [branchId], references: [id])
+  customer    Customer     @relation(fields: [customerId], references: [id])
+  vehicle     Vehicle      @relation(fields: [vehicleId], references: [id])
+  booking     Booking?     @relation(fields: [bookingId], references: [id])
+  bay         Bay?         @relation(fields: [bayId], references: [id])
+  advisor     User?        @relation("AdvisorOrders", fields: [advisorId], references: [id])
+  technician  User?        @relation("TechnicianOrders", fields: [technicianId], references: [id])
+  inspection  Inspection?
+  estimates   Estimate[]
+  lineItems   JobLineItem[]
+  invoice     Invoice?
+  media       JobMedia[]
+
+  @@unique([companyId, jobCardNumber])
+  @@index([branchId, status])
+}
+
+
+model Inspection {
+  id             String   @id @default(cuid())
+  repairOrderId  String   @unique
+  inspectorId    String?
+  damageDiagram  String?    // positions of damage markers
+  fuelLevel      Int?
+  overallNotes   String?
+  /// JSON map of category → section notes, e.g. {"Engine":"...","Brakes":"..."}
+  sectionNotes   String?
+  customerSignUrl String?
+  advisorSignUrl  String?
+  completedAt    DateTime?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  repairOrder RepairOrder       @relation(fields: [repairOrderId], references: [id], onDelete: Cascade)
+  inspector   User?             @relation(fields: [inspectorId], references: [id])
+  items       InspectionItem[]
+}
+
+model InspectionItem {
+  id            String               @id @default(cuid())
+  inspectionId  String
+  category      String               // Engine, Brakes, Tyres, Electrical, Body, Interior
+  itemName      String
+  status        String @default("PASSED")
+  notes         String?
+  photoUrl      String?
+
+  inspection Inspection @relation(fields: [inspectionId], references: [id], onDelete: Cascade)
+  media      JobMedia[]
+}
+
+model JobMedia {
+  id               String   @id @default(cuid())
+  repairOrderId    String
+  inspectionItemId String?
+  /// When set without inspectionItemId, media belongs to that inspection section
+  category         String?
+  url              String
+  mediaType        String   @default("IMAGE") // IMAGE, VIDEO
+  caption          String?
+  uploadedBy       String?
+  createdAt        DateTime @default(now())
+
+  repairOrder    RepairOrder     @relation(fields: [repairOrderId], references: [id], onDelete: Cascade)
+  inspectionItem InspectionItem? @relation(fields: [inspectionItemId], references: [id], onDelete: SetNull)
+
+  @@index([repairOrderId, category])
+  @@index([inspectionItemId])
+}
+
+
+model JobLineItem {
+  id            String       @id @default(cuid())
+  repairOrderId String
+  estimateId    String?
+  type          String
+  description   String
+  partId        String?
+  laborServiceId String?
+  hsnSacCode    String?
+  quantity      Decimal      @default(1)
+  unitPrice     Decimal     
+  discountPct   Decimal      @default(0)
+  gstRate       Decimal      @default(18)
+  isApproved    Boolean      @default(false)
+  isCompleted   Boolean      @default(false)
+  createdAt     DateTime     @default(now())
+
+  repairOrder  RepairOrder   @relation(fields: [repairOrderId], references: [id], onDelete: Cascade)
+  estimate     Estimate?     @relation(fields: [estimateId], references: [id])
+  part         Part?         @relation(fields: [partId], references: [id])
+  laborService LaborService? @relation(fields: [laborServiceId], references: [id])
+}
+
+
+model Estimate {
+  id              String         @id @default(cuid())
+  companyId       String
+  customerId      String
+  repairOrderId   String
+  estimateNumber  String
+  version         Int            @default(1)
+  status          String @default("DRAFT")
+  subtotal        Decimal        @default(0)
+  discountAmount  Decimal        @default(0)
+  cgstAmount      Decimal        @default(0)
+  sgstAmount      Decimal        @default(0)
+  igstAmount      Decimal        @default(0)
+  totalAmount     Decimal        @default(0)
+  notes           String?
+  approvalToken   String?        @unique
+  sentAt          DateTime?
+  approvedAt      DateTime?
+  rejectedAt      DateTime?
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+
+  company     Company       @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  customer    Customer      @relation(fields: [customerId], references: [id])
+  repairOrder RepairOrder   @relation(fields: [repairOrderId], references: [id], onDelete: Cascade)
+  lineItems   JobLineItem[]
+
+  @@unique([companyId, estimateNumber, version])
+}
+
+// ─────────────────────────────────────────────
+// Inventory & Parts
+// ─────────────────────────────────────────────
+
+
+model Part {
+  id            String     @id @default(cuid())
+  companyId     String
+  sku           String
+  name          String
+  description   String?
+  brand         String?
+  hsnCode       String?
+  source        String @default("AFTERMARKET")
+  unit          String     @default("PCS")
+  gstRate       Decimal    @default(18)
+  mrp           Decimal    @default(0)
+  costPrice     Decimal    @default(0)
+  sellingPrice  Decimal    @default(0)
+  reorderLevel  Int        @default(5)
+  compatibleVehicles String? // JSON or comma-separated brand/model
+  isActive      Boolean    @default(true)
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+
+  company       Company        @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  stockItems    StockItem[]
+  jobLineItems  JobLineItem[]
+  poItems       PurchaseOrderItem[]
+
+  @@unique([companyId, sku])
+}
+
+model StockItem {
+  id        String  @id @default(cuid())
+  branchId  String
+  partId    String
+  quantity  Int     @default(0)
+  reserved  Int     @default(0)
+  location  String? // bin/rack
+
+  branch Branch @relation(fields: [branchId], references: [id], onDelete: Cascade)
+  part   Part   @relation(fields: [partId], references: [id], onDelete: Cascade)
+
+  @@unique([branchId, partId])
+}
+
+model LaborService {
+  id          String  @id @default(cuid())
+  companyId   String
+  code        String
+  name        String
+  description String?
+  sacCode     String  @default("998729") // Motor vehicle maintenance SAC
+  gstRate     Decimal @default(18)
+  basePrice   Decimal
+  durationMin Int     @default(60)
+  isActive    Boolean @default(true)
+
+  company      Company       @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  jobLineItems JobLineItem[]
+
+  @@unique([companyId, code])
+}
+
+model Supplier {
+  id           String   @id @default(cuid())
+  companyId    String
+  name         String
+  gstin        String?
+  phone        String?
+  email        String?
+  address      String?
+  city         String?
+  state        String?
+  paymentTerms String?
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+
+  company        Company         @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  purchaseOrders PurchaseOrder[]
+}
+
+
+model PurchaseOrder {
+  id          String              @id @default(cuid())
+  companyId   String
+  supplierId  String
+  poNumber    String
+  status      String @default("DRAFT")
+  orderedAt   DateTime?
+  receivedAt  DateTime?
+  notes       String?
+  totalAmount Decimal             @default(0)
+  createdAt   DateTime            @default(now())
+  updatedAt   DateTime            @updatedAt
+
+  company  Company             @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  supplier Supplier            @relation(fields: [supplierId], references: [id])
+  items    PurchaseOrderItem[]
+
+  @@unique([companyId, poNumber])
+}
+
+model PurchaseOrderItem {
+  id              String  @id @default(cuid())
+  purchaseOrderId String
+  partId          String
+  quantity        Int
+  unitCost        Decimal
+  receivedQty     Int     @default(0)
+
+  purchaseOrder PurchaseOrder @relation(fields: [purchaseOrderId], references: [id], onDelete: Cascade)
+  part          Part          @relation(fields: [partId], references: [id])
+}
+
+// ─────────────────────────────────────────────
+// Invoicing & Payments (GST)
+// ─────────────────────────────────────────────
+
+
+model Invoice {
+  id              String        @id @default(cuid())
+  companyId       String
+  branchId        String
+  customerId      String
+  repairOrderId   String?       @unique
+  invoiceNumber   String
+  status          String @default("DRAFT")
+  invoiceDate     DateTime      @default(now())
+  dueDate         DateTime?
+  placeOfSupply   String?       // state name
+  supplyType      String        @default("INTRA") // INTRA (CGST+SGST) or INTER (IGST)
+  customerGstin   String?
+  sellerGstin     String?
+  subtotal        Decimal       @default(0)
+  discountAmount  Decimal       @default(0)
+  taxableAmount   Decimal       @default(0)
+  cgstAmount      Decimal       @default(0)
+  sgstAmount      Decimal       @default(0)
+  igstAmount      Decimal       @default(0)
+  roundOff        Decimal       @default(0)
+  totalAmount     Decimal       @default(0)
+  amountPaid      Decimal       @default(0)
+  amountDue       Decimal       @default(0)
+  notes           String?
+  pdfUrl          String?
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  company     Company        @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  branch      Branch         @relation(fields: [branchId], references: [id])
+  customer    Customer       @relation(fields: [customerId], references: [id])
+  repairOrder RepairOrder?   @relation(fields: [repairOrderId], references: [id])
+  lineItems   InvoiceLine[]
+  payments    Payment[]
+
+  @@unique([companyId, invoiceNumber])
+}
+
+model InvoiceLine {
+  id            String       @id @default(cuid())
+  invoiceId     String
+  type          String
+  description   String
+  hsnSacCode    String?
+  quantity      Decimal     
+  unitPrice     Decimal     
+  discountPct   Decimal      @default(0)
+  taxableAmount Decimal     
+  gstRate       Decimal     
+  cgstAmount    Decimal      @default(0)
+  sgstAmount    Decimal      @default(0)
+  igstAmount    Decimal      @default(0)
+  totalAmount   Decimal     
+
+  invoice Invoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+}
+
+
+
+model Payment {
+  id              String        @id @default(cuid())
+  companyId       String
+  customerId      String
+  invoiceId       String?
+  paymentNumber   String
+  method          String
+  status          String @default("PENDING")
+  amount          Decimal      
+  upiVpa          String?
+  upiTxnId        String?
+  gatewayOrderId  String?
+  gatewayPaymentId String?
+  gatewayRef      String?
+  qrPayload       String?
+  notes           String?
+  paidAt          DateTime?
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  company  Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  customer Customer @relation(fields: [customerId], references: [id])
+  invoice  Invoice? @relation(fields: [invoiceId], references: [id])
+
+  @@unique([companyId, paymentNumber])
+}
