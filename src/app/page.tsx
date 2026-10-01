@@ -142,7 +142,7 @@ export default function HomePage() {
       </section>
 
       <footer className="border-t border-white/10 px-5 py-6 text-xs text-white/35 sm:px-8 md:px-12">
-        © {new Date().getFullYear()} ServC Auto India
+        © {new Date().getFullYear()} ServC Auto India · Designed &amp; built by Dinesh V Sundaram
       </footer>
     </div>
   );
