@@ -2,6 +2,8 @@
 
 Static product site for GitHub Pages (`/docs`).
 
+**Author:** Dinesh V Sundaram
+
 | Page | Purpose |
 | --- | --- |
 | [index.html](index.html) | Product landing |
@@ -9,4 +11,4 @@ Static product site for GitHub Pages (`/docs`).
 | [guides/USER_MANUAL.md](guides/USER_MANUAL.md) | Operator manual |
 | [guides/API.md](guides/API.md) | API overview |
 
-Enable Pages: **Settings → Pages → Deploy from branch → `/docs`**.
+Deployed via GitHub Actions (workflow). Source of truth is this `docs/` folder.

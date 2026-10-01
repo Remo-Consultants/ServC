@@ -182,6 +182,12 @@ Site URL: `https://remo-consultants.github.io/ServC/`
 
 ---
 
+## Credits
+
+**ServC Auto India** is designed and built by **Dinesh V Sundaram** ([Remo-Consultants](https://github.com/Remo-Consultants)).
+
+All product concept, architecture, UI, and documentation credit belongs to Dinesh V Sundaram.
+
 ## License
 
-Proprietary — Remo Consultants. All rights reserved unless otherwise stated.
+Proprietary — © 2026 Dinesh V Sundaram / Remo Consultants. All rights reserved unless otherwise stated.
