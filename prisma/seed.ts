@@ -8,6 +8,7 @@ async function main() {
   console.log("🌱 Seeding ServC Auto India demo data…");
 
   await prisma.auditLog.deleteMany();
+  await prisma.operatingExpense.deleteMany();
   await prisma.payment.deleteMany();
   await prisma.invoiceLine.deleteMany();
   await prisma.invoice.deleteMany();
@@ -690,6 +691,89 @@ async function main() {
   await prisma.customer.update({
     where: { id: customer2.id },
     data: { lifetimeValue: 4130 },
+  });
+
+  // Historical sales (payments) + operating expenses for trend charts
+  const now = new Date();
+  const salesMonths = [
+    { monthsAgo: 5, amount: 186000 },
+    { monthsAgo: 4, amount: 212500 },
+    { monthsAgo: 3, amount: 198000 },
+    { monthsAgo: 2, amount: 241000 },
+    { monthsAgo: 1, amount: 267500 },
+    { monthsAgo: 0, amount: 154000 },
+  ];
+
+  for (let i = 0; i < salesMonths.length; i++) {
+    const { monthsAgo, amount } = salesMonths[i];
+    const paidAt = new Date(now.getFullYear(), now.getMonth() - monthsAgo, 12 + (i % 5));
+    await prisma.payment.create({
+      data: {
+        companyId: company.id,
+        customerId: customer1.id,
+        paymentNumber: `PAY26T${String(i + 1).padStart(3, "0")}`,
+        method: "UPI",
+        status: "SUCCESS",
+        amount,
+        upiVpa: "servcautocare@oksbi",
+        upiTxnId: `UPI-TREND-${i + 1}`,
+        paidAt,
+      },
+    });
+  }
+
+  const expenseTemplates = [
+    { category: "RENT", description: "Branch rent — Baner", amount: 85000 },
+    { category: "SALARIES", description: "Staff payroll", amount: 220000 },
+    { category: "UTILITIES", description: "Electricity & water", amount: 28000 },
+    { category: "CONSUMABLES", description: "Workshop consumables", amount: 18500 },
+    { category: "MARKETING", description: "Local ads & Google", amount: 12000 },
+    { category: "MAINTENANCE", description: "Equipment servicing", amount: 9500 },
+  ];
+
+  for (let m = 5; m >= 0; m--) {
+    for (const t of expenseTemplates) {
+      const variance = 1 + ((m + t.amount) % 7) * 0.015;
+      await prisma.operatingExpense.create({
+        data: {
+          companyId: company.id,
+          category: t.category,
+          description: t.description,
+          amount: Math.round(t.amount * variance),
+          expenseDate: new Date(now.getFullYear(), now.getMonth() - m, 5),
+          vendor: t.category === "RENT" ? "Baner Realty" : undefined,
+        },
+      });
+    }
+  }
+
+  await prisma.purchaseOrder.create({
+    data: {
+      companyId: company.id,
+      supplierId: supplier.id,
+      poNumber: "PO2600001",
+      status: "RECEIVED",
+      orderedAt: new Date(now.getFullYear(), now.getMonth(), 3),
+      receivedAt: new Date(now.getFullYear(), now.getMonth(), 8),
+      totalAmount: 96500,
+      notes: "Monthly OEM & aftermarket refill",
+      items: {
+        create: [
+          {
+            partId: oilPart!.id,
+            quantity: 24,
+            unitCost: 1600,
+            receivedQty: 24,
+          },
+          {
+            partId: filterPart!.id,
+            quantity: 40,
+            unitCost: 280,
+            receivedQty: 40,
+          },
+        ],
+      },
+    },
   });
 
   await prisma.auditLog.create({

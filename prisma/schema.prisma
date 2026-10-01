@@ -53,6 +53,7 @@ model Company {
   auditLogs       AuditLog[]
   purchaseOrders  PurchaseOrder[]
   settings        CompanySetting[]
+  expenses        OperatingExpense[]
 }
 
 model CompanySetting {
@@ -536,6 +537,22 @@ model Supplier {
   purchaseOrders PurchaseOrder[]
 }
 
+model OperatingExpense {
+  id          String   @id @default(cuid())
+  companyId   String
+  category    String   // RENT, UTILITIES, SALARIES, CONSUMABLES, MARKETING, MAINTENANCE, OTHER
+  description String?
+  amount      Decimal
+  expenseDate DateTime
+  vendor      String?
+  notes       String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@index([companyId, expenseDate])
+}
 
 model PurchaseOrder {
   id          String              @id @default(cuid())

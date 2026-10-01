@@ -4,21 +4,42 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { api, setSession } from "@/lib/client-api";
-import { Button, Card, Input, Label } from "@/components/workshop-ui";
+import { Button, Input, Label } from "@/components/workshop-ui";
 
-type Mode = "staff" | "otp";
+type Audience = "staff" | "customer";
+type CustomerIntent = "login" | "signup";
 
 export default function LoginPage() {
   const router = useRouter();
-  const [mode, setMode] = useState<Mode>("staff");
-  const [email, setEmail] = useState("owner@servc.in");
-  const [password, setPassword] = useState("ServC@123");
-  const [phone, setPhone] = useState("9876543210");
+  const [audience, setAudience] = useState<Audience>("staff");
+  const [customerIntent, setCustomerIntent] = useState<CustomerIntent>("login");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [name, setName] = useState("");
+  const [phone, setPhone] = useState("");
   const [otp, setOtp] = useState("");
   const [otpSent, setOtpSent] = useState(false);
   const [demoOtp, setDemoOtp] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+
+  function resetCustomerFlow() {
+    setOtpSent(false);
+    setOtp("");
+    setDemoOtp("");
+    setError("");
+  }
+
+  function switchAudience(next: Audience) {
+    setAudience(next);
+    setError("");
+    resetCustomerFlow();
+  }
+
+  function switchCustomerIntent(next: CustomerIntent) {
+    setCustomerIntent(next);
+    resetCustomerFlow();
+  }
 
   async function staffLogin(e: React.FormEvent) {
     e.preventDefault();
@@ -39,11 +60,19 @@ export default function LoginPage() {
 
   async function requestOtp(e: React.FormEvent) {
     e.preventDefault();
+    if (customerIntent === "signup" && !name.trim()) {
+      setError("Please enter your name");
+      return;
+    }
     setLoading(true);
     setError("");
     const res = await api<{ demoOtp?: string }>("/api/auth/otp/request", {
       method: "POST",
-      body: JSON.stringify({ phone }),
+      body: JSON.stringify({
+        phone,
+        purpose: "LOGIN",
+        name: customerIntent === "signup" ? name.trim() : undefined,
+      }),
     });
     setLoading(false);
     if (!res.success) {
@@ -63,7 +92,15 @@ export default function LoginPage() {
     setError("");
     const res = await api<{ token: string; user: Parameters<typeof setSession>[1] }>(
       "/api/auth/otp/verify",
-      { method: "POST", body: JSON.stringify({ phone, code: otp }) }
+      {
+        method: "POST",
+        body: JSON.stringify({
+          phone,
+          code: otp,
+          name: customerIntent === "signup" ? name.trim() : undefined,
+          signup: customerIntent === "signup",
+        }),
+      }
     );
     setLoading(false);
     if (!res.success || !res.data) {
@@ -74,62 +111,113 @@ export default function LoginPage() {
     router.push(res.data.user.role === "CUSTOMER" ? "/portal" : "/dashboard");
   }
 
+  const heading =
+    audience === "staff"
+      ? "Staff sign in"
+      : customerIntent === "signup"
+        ? "Create customer account"
+        : "Customer sign in";
+
+  const subtitle =
+    audience === "staff"
+      ? "Access workshop operations with your email."
+      : customerIntent === "signup"
+        ? "Book services and track your vehicle with OTP."
+        : "Enter your mobile number to receive an OTP.";
+
   return (
-    <div className="relative min-h-screen overflow-hidden">
+    <div className="relative min-h-screen overflow-hidden text-white">
+      <div className="auth-brand-bg absolute inset-0" aria-hidden />
+      <div className="auth-brand-grain absolute inset-0" aria-hidden />
+      <div className="auth-brand-sweep absolute inset-0" aria-hidden />
       <div
-        className="absolute inset-0"
-        style={{
-          background:
-            "radial-gradient(ellipse 80% 60% at 20% 20%, #145c45 0%, transparent 50%), radial-gradient(ellipse 70% 50% at 80% 80%, #e8a31733 0%, transparent 45%), linear-gradient(160deg, #0b3d2e 0%, #0f1f1a 55%, #1a2e26 100%)",
-        }}
-      />
-      <div
-        className="absolute inset-0 opacity-[0.07]"
+        className="pointer-events-none absolute inset-y-0 right-0 w-full max-w-3xl opacity-[0.16]"
+        aria-hidden
         style={{
           backgroundImage:
-            "url(\"data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E\")",
+            "radial-gradient(ellipse 45% 35% at 72% 58%, rgba(232,163,23,0.3) 0%, transparent 70%), linear-gradient(105deg, transparent 35%, rgba(255,255,255,0.04) 55%, transparent 75%)",
         }}
       />
+      <svg
+        className="pointer-events-none absolute bottom-0 right-0 h-[50vh] w-auto max-w-[65vw] translate-x-[10%] opacity-[0.1]"
+        viewBox="0 0 640 480"
+        fill="none"
+        aria-hidden
+      >
+        <path
+          d="M40 400 V180 H120 V120 H280 V180 H360 V100 H520 V180 H600 V400"
+          stroke="white"
+          strokeWidth="3"
+        />
+        <path d="M160 400 V240 H240 V400 M400 400 V220 H480 V400" stroke="white" strokeWidth="2.5" />
+        <circle cx="200" cy="400" r="36" stroke="white" strokeWidth="3" />
+        <circle cx="440" cy="400" r="36" stroke="white" strokeWidth="3" />
+        <path d="M80 180 H200 M360 180 H500" stroke="#e8a317" strokeWidth="2" opacity="0.8" />
+      </svg>
 
-      <div className="relative z-10 flex min-h-screen flex-col items-center justify-center px-4 py-12">
-        <div className="mb-8 text-center animate-fade-up">
-          <div className="font-display text-5xl font-bold tracking-tight text-white md:text-6xl">
-            ServC
+      <header className="relative z-10 flex items-center justify-between px-5 py-5 sm:px-8">
+        <Link href="/" className="font-display text-2xl font-bold tracking-tight text-white">
+          ServC
+        </Link>
+        <Link
+          href="/"
+          className="text-sm text-white/60 transition hover:text-accent"
+        >
+          Back to home
+        </Link>
+      </header>
+
+      <main className="relative z-10 mx-auto flex w-full max-w-[440px] flex-col px-5 pb-16 pt-4 sm:px-8">
+        <div className="rounded-2xl border border-white/10 bg-white/95 p-6 text-ink shadow-[0_24px_60px_rgba(0,0,0,0.28)] backdrop-blur-sm sm:p-8 animate-fade-up">
+          <div className="mb-7">
+            <p className="text-xs font-medium uppercase tracking-[0.18em] text-accent-dark">
+              Auto India
+            </p>
+            <h1 className="mt-2 font-display text-2xl font-semibold text-ink sm:text-[1.75rem]">
+              {heading}
+            </h1>
+            <p className="mt-2 text-sm leading-relaxed text-muted">{subtitle}</p>
           </div>
-          <p className="mt-2 text-lg text-accent">Auto India</p>
-          <p className="mt-3 max-w-md text-sm text-white/70">
-            GST-ready workshop management for multi-brand service centres across India.
-          </p>
-        </div>
 
-        <Card className="w-full max-w-md animate-fade-up border-0 shadow-2xl">
-          <div className="mb-5 flex rounded-lg bg-surface p-1">
+          <div
+            className="mb-7 grid grid-cols-2 gap-1 rounded-xl border border-border bg-surface p-1"
+            role="tablist"
+            aria-label="Account type"
+          >
             <button
-              className={`flex-1 rounded-md py-2 text-sm font-medium transition ${
-                mode === "staff" ? "bg-white shadow text-ink" : "text-muted"
+              type="button"
+              role="tab"
+              aria-selected={audience === "staff"}
+              className={`rounded-lg py-2.5 text-sm font-medium transition ${
+                audience === "staff" ? "bg-brand text-white" : "text-muted hover:text-ink"
               }`}
-              onClick={() => setMode("staff")}
+              onClick={() => switchAudience("staff")}
             >
-              Staff Login
+              Workshop staff
             </button>
             <button
-              className={`flex-1 rounded-md py-2 text-sm font-medium transition ${
-                mode === "otp" ? "bg-white shadow text-ink" : "text-muted"
+              type="button"
+              role="tab"
+              aria-selected={audience === "customer"}
+              className={`rounded-lg py-2.5 text-sm font-medium transition ${
+                audience === "customer" ? "bg-brand text-white" : "text-muted hover:text-ink"
               }`}
-              onClick={() => setMode("otp")}
+              onClick={() => switchAudience("customer")}
             >
-              Customer OTP
+              Customer
             </button>
           </div>
 
-          {mode === "staff" ? (
+          {audience === "staff" ? (
             <form onSubmit={staffLogin} className="space-y-4">
               <div>
-                <Label>Email</Label>
+                <Label>Work email</Label>
                 <Input
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
+                  placeholder="you@workshop.in"
+                  autoComplete="username"
                   required
                 />
               </div>
@@ -139,71 +227,111 @@ export default function LoginPage() {
                   type="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
+                  placeholder="••••••••"
+                  autoComplete="current-password"
                   required
                 />
               </div>
               {error && <p className="text-sm text-danger">{error}</p>}
-              <Button type="submit" className="w-full" disabled={loading}>
-                {loading ? "Signing in…" : "Sign in to Workshop"}
+              <Button type="submit" className="h-11 w-full text-[15px]" disabled={loading}>
+                {loading ? "Signing in…" : "Sign in"}
               </Button>
-              <p className="text-center text-xs text-muted">
+              <p className="pt-1 text-center text-xs text-muted">
                 Demo: owner@servc.in / ServC@123
               </p>
             </form>
           ) : (
             <form onSubmit={otpSent ? verifyOtp : requestOtp} className="space-y-4">
-              <div>
-                <Label>Mobile Number</Label>
-                <Input
-                  type="tel"
-                  value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
-                  placeholder="10-digit mobile"
-                  required
-                  disabled={otpSent}
-                />
+              <div className="flex items-center justify-between gap-3 text-sm">
+                <span className="text-muted">
+                  {customerIntent === "login" ? "New here?" : "Already registered?"}
+                </span>
+                <button
+                  type="button"
+                  className="font-medium text-brand underline-offset-2 hover:underline"
+                  onClick={() =>
+                    switchCustomerIntent(customerIntent === "login" ? "signup" : "login")
+                  }
+                >
+                  {customerIntent === "login" ? "Create an account" : "Sign in instead"}
+                </button>
               </div>
+
+              {customerIntent === "signup" && (
+                <div>
+                  <Label>Full name</Label>
+                  <Input
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    placeholder="Ananya Joshi"
+                    autoComplete="name"
+                    required
+                    disabled={otpSent}
+                  />
+                </div>
+              )}
+
+              <div>
+                <Label>Mobile number</Label>
+                <div className="flex overflow-hidden rounded-lg border border-border bg-white focus-within:border-brand focus-within:ring-2 focus-within:ring-brand/20">
+                  <span className="flex items-center border-r border-border bg-surface px-3 text-sm text-muted">
+                    +91
+                  </span>
+                  <input
+                    type="tel"
+                    inputMode="numeric"
+                    className="w-full border-0 bg-transparent px-3 py-2 text-sm outline-none"
+                    value={phone}
+                    onChange={(e) => setPhone(e.target.value.replace(/\D/g, "").slice(0, 10))}
+                    placeholder="9876543210"
+                    autoComplete="tel"
+                    required
+                    disabled={otpSent}
+                  />
+                </div>
+              </div>
+
               {otpSent && (
                 <div>
-                  <Label>OTP</Label>
+                  <Label>One-time password</Label>
                   <Input
                     value={otp}
-                    onChange={(e) => setOtp(e.target.value)}
-                    placeholder="6-digit OTP"
+                    onChange={(e) => setOtp(e.target.value.replace(/\D/g, "").slice(0, 6))}
+                    placeholder="6-digit code"
+                    inputMode="numeric"
                     required
                   />
                   {demoOtp && (
-                    <p className="mt-1 text-xs text-success">Demo OTP: {demoOtp}</p>
+                    <p className="mt-1.5 text-xs text-success">Demo OTP: {demoOtp}</p>
                   )}
                 </div>
               )}
+
               {error && <p className="text-sm text-danger">{error}</p>}
-              <Button type="submit" className="w-full" disabled={loading}>
+
+              <Button type="submit" className="h-11 w-full text-[15px]" disabled={loading}>
                 {loading
                   ? "Please wait…"
                   : otpSent
-                    ? "Verify & Continue"
-                    : "Send OTP via WhatsApp"}
+                    ? "Verify & continue"
+                    : customerIntent === "signup"
+                      ? "Send OTP to sign up"
+                      : "Send OTP"}
               </Button>
+
               {otpSent && (
                 <button
                   type="button"
-                  className="w-full text-xs text-muted underline"
-                  onClick={() => setOtpSent(false)}
+                  className="w-full text-xs text-muted underline-offset-2 hover:underline"
+                  onClick={resetCustomerFlow}
                 >
-                  Change number
+                  Use a different number
                 </button>
               )}
             </form>
           )}
-        </Card>
-
-        <p className="mt-8 text-center text-xs text-white/40">
-          <Link href="/" className="hover:text-white/70">
-            ← Back to home
-          </Link>
-        </p>
-      </div>
+        </div>
+      </main>
     </div>
   );
 }

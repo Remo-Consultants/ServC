@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>ServC Demo — Role journeys</title>
+  <meta name="description" content="Walk through ServC Auto India role journeys with product screenshots for owner, advisor, technician, inventory, accountant, and customer." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Outfit:wght@500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="assets/site.css" />
+</head>
+<body>
+  <header class="site-header">
+    <div class="container inner">
+      <a class="logo" href="index.html">ServC<span>Auto India</span></a>
+      <nav class="nav">
+        <a href="index.html">Product</a>
+        <a class="active" href="demo.html">Role demos</a>
+        <a href="guides/USER_MANUAL.md">Docs</a>
+        <a class="btn btn-accent" href="https://github.com/Remo-Consultants/ServC">GitHub</a>
+      </nav>
+    </div>
+  </header>
+
+  <section class="demo-hero">
+    <div class="container">
+      <p class="eyebrow">Interactive gallery</p>
+      <h1 style="margin:0;font-size:clamp(2rem,5vw,3.4rem);letter-spacing:-0.03em;">Role journeys</h1>
+      <p class="lead" style="margin:0.9rem 0 0;max-width:36rem;color:rgba(255,255,255,0.72);">
+        Pick a persona to see how ServC supports their day — from bay utilisation to WhatsApp approvals and GST settlement.
+      </p>
+      <div class="role-tabs" role="tablist" aria-label="Roles">
+        <button class="role-tab active" data-role="owner" type="button">Owner</button>
+        <button class="role-tab" data-role="advisor" type="button">Service Advisor</button>
+        <button class="role-tab" data-role="technician" type="button">Technician</button>
+        <button class="role-tab" data-role="inventory" type="button">Inventory</button>
+        <button class="role-tab" data-role="accountant" type="button">Accountant</button>
+        <button class="role-tab" data-role="customer" type="button">Customer</button>
+      </div>
+    </div>
+  </section>
+
+  <section class="journey active" id="journey-owner" data-role="owner">
+    <div class="container journey-layout">
+      <div class="journey-copy">
+        <div class="role-badge">Owner / Branch Manager</div>
+        <h2>Run the workshop like an OS</h2>
+        <p>See revenue, OpEx, bay load, and open jobs at a glance. Drill into GST summaries and technician productivity without leaving the dashboard.</p>
+        <ol class="steps">
+          <li data-step="1"><strong>Morning pulse</strong><span>Review KPIs: jobs today, revenue MTD, low stock, pending approvals.</span></li>
+          <li data-step="2"><strong>Sales vs OpEx</strong><span>Compare six-month sales trends against rent, utilities, and payroll expense categories.</span></li>
+          <li data-step="3"><strong>Bay &amp; staff load</strong><span>Spot bottlenecks before the afternoon rush; reassign work across technicians.</span></li>
+          <li data-step="4"><strong>GST health</strong><span>Month-to-date taxable value, CGST/SGST/IGST split, and invoice counts.</span></li>
+        </ol>
+        <div class="acceptance"><strong>Demo login:</strong> owner@servc.in / ServC@123</div>
+      </div>
+      <figure class="shot">
+        <img src="assets/screenshots/demo-owner-dashboard.jpg" alt="Owner dashboard with KPIs and charts" />
+        <figcaption>Operations dashboard — KPIs, sales trend, and OpEx mix</figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <section class="journey" id="journey-advisor" data-role="advisor">
+    <div class="container journey-layout">
+      <div class="journey-copy">
+        <div class="role-badge">Service Advisor</div>
+        <h2>From walk-in to approved estimate</h2>
+        <p>Create job cards, capture inspection findings, draft GST-aware estimates, and push WhatsApp approvals before technicians start.</p>
+        <ol class="steps">
+          <li data-step="1"><strong>Check-in</strong><span>Match booking or create walk-in; verify registration, odometer, and PUC.</span></li>
+          <li data-step="2"><strong>Inspect</strong><span>Mark checklist items Passed / Attention / Critical with notes and photos.</span></li>
+          <li data-step="3"><strong>Estimate</strong><span>Add labour + parts with HSN/SAC; system computes CGST/SGST or IGST.</span></li>
+          <li data-step="4"><strong>WhatsApp approve</strong><span>Customer receives the quote, approves lines, and work can begin.</span></li>
+        </ol>
+        <div class="acceptance"><strong>Demo login:</strong> advisor@servc.in / ServC@123</div>
+      </div>
+      <figure class="shot">
+        <img src="assets/screenshots/demo-advisor-jobcard.jpg" alt="Service advisor digital job card" />
+        <figcaption>Digital job card — intake, status, and estimate workflow</figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <section class="journey" id="journey-technician" data-role="technician">
+    <div class="container journey-layout">
+      <div class="journey-copy">
+        <div class="role-badge">Technician</div>
+        <h2>Clear queue, clear status</h2>
+        <p>Technicians see assigned work, run digital inspections, and hand off to Quality Check without paperwork.</p>
+        <ol class="steps">
+          <li data-step="1"><strong>My jobs</strong><span>Open the assigned queue filtered by bay and priority.</span></li>
+          <li data-step="2"><strong>Inspect &amp; repair</strong><span>Complete checklist findings, consume approved parts, log progress.</span></li>
+          <li data-step="3"><strong>QC handoff</strong><span>Move In Progress → Quality Check → Ready for delivery.</span></li>
+        </ol>
+        <div class="acceptance"><strong>Demo login:</strong> tech1@servc.in / ServC@123</div>
+      </div>
+      <figure class="shot">
+        <img src="assets/screenshots/demo-technician-inspection.jpg" alt="Technician inspection checklist" />
+        <figcaption>Inspection checklist — Passed, Attention, or Critical</figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <section class="journey" id="journey-inventory" data-role="inventory">
+    <div class="container journey-layout">
+      <div class="journey-copy">
+        <div class="role-badge">Inventory Manager</div>
+        <h2>Keep the bays stocked</h2>
+        <p>Track OEM, aftermarket, and local-market SKUs with HSN, branch quantities, and low-stock alerts that feed purchase orders.</p>
+        <ol class="steps">
+          <li data-step="1"><strong>Catalogue</strong><span>Maintain SKUs with brand source, HSN, and reorder points.</span></li>
+          <li data-step="2"><strong>Consume</strong><span>Parts drawn on approved job cards reduce branch stock automatically.</span></li>
+          <li data-step="3"><strong>Reorder</strong><span>Raise POs when alerts fire; receive stock against the order.</span></li>
+        </ol>
+        <div class="acceptance"><strong>Demo login:</strong> inventory@servc.in / ServC@123</div>
+      </div>
+      <figure class="shot">
+        <img src="assets/screenshots/demo-inventory.jpg" alt="Inventory catalogue with stock levels" />
+        <figcaption>Inventory — HSN-aware catalogue and stock health</figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <section class="journey" id="journey-accountant" data-role="accountant">
+    <div class="container journey-layout">
+      <div class="journey-copy">
+        <div class="role-badge">Accountant</div>
+        <h2>GST invoices &amp; UPI settlement</h2>
+        <p>Issue tax invoices with customer GSTIN for ITC, track partial payments, and export GSTR-1 style summaries.</p>
+        <ol class="steps">
+          <li data-step="1"><strong>Invoice</strong><span>Generate from approved estimate; CGST/SGST or IGST by place of supply.</span></li>
+          <li data-step="2"><strong>Collect</strong><span>UPI QR / intent, cash, or card — record partials until closed.</span></li>
+          <li data-step="3"><strong>Report</strong><span>Month GST summary ready for returns filing support.</span></li>
+        </ol>
+        <div class="acceptance"><strong>Demo login:</strong> accounts@servc.in / ServC@123</div>
+      </div>
+      <figure class="shot">
+        <img src="assets/screenshots/demo-accountant-gst.jpg" alt="GST invoice and reports screen" />
+        <figcaption>Accounts — GST invoices, tax split, and settlement status</figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <section class="journey" id="journey-customer" data-role="customer">
+    <div class="container journey-layout">
+      <div class="journey-copy">
+        <div class="role-badge">Customer portal</div>
+        <h2>Transparency after drop-off</h2>
+        <p>Customers book online, track job status, approve estimates on WhatsApp, and pay via UPI when the car is ready.</p>
+        <ol class="steps">
+          <li data-step="1"><strong>Book</strong><span>Choose service type, slot, and vehicle from the portal.</span></li>
+          <li data-step="2"><strong>Approve</strong><span>Review estimate lines; approve or reject before work starts.</span></li>
+          <li data-step="3"><strong>Pay &amp; collect</strong><span>UPI payment against GST invoice; pickup when Ready.</span></li>
+        </ol>
+        <div class="acceptance"><strong>Demo OTP login:</strong> 9876543210 · OTP <code>123456</code> (demo mode)</div>
+      </div>
+      <div>
+        <figure class="shot" style="margin-bottom:1rem;">
+          <img src="assets/screenshots/demo-customer-estimate.jpg" alt="Customer estimate approval" />
+          <figcaption>Estimate review — approve lines before work begins</figcaption>
+        </figure>
+        <figure class="shot">
+          <img src="assets/screenshots/demo-customer-upi.jpg" alt="Customer UPI payment" />
+          <figcaption>UPI settlement — pay when the vehicle is Ready</figcaption>
+        </figure>
+      </div>
+    </div>
+  </section>
+
+  <footer class="site-footer">
+    <div class="container inner">
+      <div>© 2026 ServC Auto India · Remo Consultants</div>
+      <div><a href="index.html">← Back to product site</a></div>
+    </div>
+  </footer>
+
+  <script>
+    const tabs = document.querySelectorAll(".role-tab");
+    const journeys = document.querySelectorAll(".journey");
+    tabs.forEach((tab) => {
+      tab.addEventListener("click", () => {
+        const role = tab.dataset.role;
+        tabs.forEach((t) => t.classList.toggle("active", t === tab));
+        journeys.forEach((j) => j.classList.toggle("active", j.dataset.role === role));
+        history.replaceState(null, "", "#" + role);
+      });
+    });
+    const hash = location.hash.replace("#", "");
+    if (hash) {
+      const match = document.querySelector('.role-tab[data-role="' + hash + '"]');
+      if (match) match.click();
+    }
+  </script>
+</body>
+</html>

@@ -13,9 +13,9 @@ const outfit = Outfit({
 });
 
 export const metadata: Metadata = {
-  title: "ServC | Job Card",
+  title: "ServC Auto India | Workshop Management",
   description:
-    "Multi-step service intake job card — customer, vehicle, close-out with mock email/WhatsApp notify.",
+    "GST-compliant multi-brand automobile workshop management for the Indian market — bookings, job cards, estimates, inventory, UPI payments.",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

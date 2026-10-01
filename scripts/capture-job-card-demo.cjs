@@ -2,9 +2,31 @@ const { chromium } = require("playwright");
 const path = require("path");
 const fs = require("fs");
 
+/** Portable output dir (override with JOB_CARD_MEDIA_DIR). */
 const MEDIA =
-  "C:\\Users\\dines\\AppData\\Local\\Cursor\\AgentStores\\cursor_agent_stores\\bc-3433f4b1-143f-4648-85a3-95362fbe65de\\files\\media\\job-card";
-const BASE = "http://127.0.0.1:4317";
+  process.env.JOB_CARD_MEDIA_DIR ||
+  path.join(__dirname, "..", "artifacts", "job-card");
+const BASE = process.env.JOB_CARD_BASE_URL || "http://127.0.0.1:4317";
+
+const ANGLES = ["front", "rear", "left", "right", "top"];
+const TINY_PNG = Buffer.from(
+  "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==",
+  "base64"
+);
+
+function ensureTempPhotos(dir) {
+  fs.mkdirSync(dir, { recursive: true });
+  for (const a of ANGLES) {
+    fs.writeFileSync(path.join(dir, `_tmp-${a}.png`), TINY_PNG);
+  }
+}
+
+function cleanupTempPhotos(dir) {
+  for (const a of ANGLES) {
+    const p = path.join(dir, `_tmp-${a}.png`);
+    if (fs.existsSync(p)) fs.unlinkSync(p);
+  }
+}
 
 async function fillByLabel(page, labelText, value) {
   const label = page.locator("label", { hasText: labelText }).first();
@@ -12,8 +34,17 @@ async function fillByLabel(page, labelText, value) {
   await field.fill(value);
 }
 
+async function attachVehiclePhotos(page, mediaDir) {
+  const inputs = page.locator('input[type="file"]');
+  const count = await inputs.count();
+  for (let i = 0; i < count; i++) {
+    const angle = ANGLES[i % ANGLES.length];
+    await inputs.nth(i).setInputFiles(path.join(mediaDir, `_tmp-${angle}.png`));
+  }
+}
+
 (async () => {
-  fs.mkdirSync(MEDIA, { recursive: true });
+  ensureTempPhotos(MEDIA);
   const browser = await chromium.launch({ headless: true });
   const page = await browser.newPage({ viewport: { width: 1280, height: 900 } });
   await page.goto(BASE, { waitUntil: "networkidle" });
@@ -53,13 +84,7 @@ async function fillByLabel(page, labelText, value) {
   await page.waitForTimeout(400);
 
   // Page 2 §2 — Photographs
-  const angles = ["front", "rear", "left", "right", "top"];
-  const inputs = page.locator('input[type="file"]');
-  const count = await inputs.count();
-  for (let i = 0; i < count; i++) {
-    const tmp = path.join(MEDIA, `_tmp-${angles[i] || "front"}.png`);
-    await inputs.nth(i).setInputFiles(tmp);
-  }
+  await attachVehiclePhotos(page, MEDIA);
   await page.waitForTimeout(500);
   await page.screenshot({
     path: path.join(MEDIA, "03-vehicle-photos.png"),
@@ -120,18 +145,13 @@ async function fillByLabel(page, labelText, value) {
     fullPage: true,
   });
 
-  // short recording via tracing screenshots is not video; try page.video
   await browser.close();
-
-  // cleanup temp photos
-  for (const a of angles) {
-    const p = path.join(MEDIA, `_tmp-${a}.png`);
-    if (fs.existsSync(p)) fs.unlinkSync(p);
-  }
+  cleanupTempPhotos(MEDIA);
 
   const files = fs
     .readdirSync(MEDIA)
     .filter((f) => f.endsWith(".png") || f.endsWith(".webm") || f.endsWith(".mp4"));
+  console.log("MEDIA_DIR", MEDIA);
   console.log("MEDIA_FILES");
   for (const f of files) {
     const full = path.join(MEDIA, f);

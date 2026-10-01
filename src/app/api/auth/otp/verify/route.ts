@@ -7,7 +7,7 @@ import { Role } from "@/lib/roles";
 /** POST /api/auth/otp/verify — verify OTP and issue JWT */
 export async function POST(req: NextRequest) {
   try {
-    const { phone, code, purpose = "LOGIN" } = await req.json();
+    const { phone, code, purpose = "LOGIN", name, signup } = await req.json();
     const normalized = String(phone).replace(/\D/g, "").slice(-10);
 
     if (!normalized || !code) return fail("Phone and OTP code required");
@@ -17,14 +17,51 @@ export async function POST(req: NextRequest) {
 
     let user = await prisma.user.findUnique({ where: { phone: normalized } });
 
-    // Auto-create customer portal user on first login
+    if (signup && user) {
+      return fail("An account with this mobile number already exists. Please use Customer Login.", 409);
+    }
+
+    // Auto-create customer portal user on first login / sign up
     if (!user) {
+      const displayName =
+        typeof name === "string" && name.trim()
+          ? name.trim()
+          : `Customer ${normalized.slice(-4)}`;
+
+      const company = await prisma.company.findFirst({ where: { isActive: true } });
+
       user = await prisma.user.create({
         data: {
           phone: normalized,
-          name: `Customer ${normalized.slice(-4)}`,
+          name: displayName,
           role: Role.CUSTOMER,
+          companyId: company?.id || null,
         },
+      });
+
+      if (company) {
+        await prisma.customer.upsert({
+          where: {
+            companyId_phone: { companyId: company.id, phone: normalized },
+          },
+          create: {
+            companyId: company.id,
+            userId: user.id,
+            name: displayName,
+            phone: normalized,
+            source: "ONLINE",
+            whatsappOptIn: true,
+          },
+          update: {
+            userId: user.id,
+            name: displayName,
+          },
+        });
+      }
+    } else if (typeof name === "string" && name.trim() && user.name.startsWith("Customer ")) {
+      user = await prisma.user.update({
+        where: { id: user.id },
+        data: { name: name.trim() },
       });
     }
 

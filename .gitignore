@@ -48,3 +48,6 @@ prisma/dev.db-journal
 
 # uploaded job card media
 /public/uploads
+
+# local capture / demo artifacts
+/artifacts
