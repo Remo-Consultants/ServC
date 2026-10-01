@@ -1,5 +1,7 @@
 # ServC Auto India
-
+<p align="center">
+  <img src="docs/assets/screenshots/hero-servc.jpg" alt="ServC hero" width="720" />
+</p>
 **Workshop operating system for multi-brand Indian automobile service centres.**
 
 ServC covers the full loop from booking → digital job card → WhatsApp estimate approval → repair → GST invoice → UPI payment — with role-based access for owners, advisors, technicians, inventory, accounts, and customers.
@@ -25,9 +27,7 @@ Indian multi-brand workshops juggle WhatsApp quotes, paper job cards, GST invoic
 
 ## Screenshots
 
-<p align="center">
-  <img src="docs/assets/screenshots/hero-servc.jpg" alt="ServC hero" width="720" />
-</p>
+
 
 | Owner dashboard | Advisor job card | Inventory |
 | --- | --- | --- |
